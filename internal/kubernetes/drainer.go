@@ -293,21 +293,26 @@ func (d *APICordonDrainer) Drain(n *core.Node) error {
 		d.l.Debug("Skipping drain because draining is disabled")
 		return nil
 	}
+	d.l.Info("Drain 1")
 
 	pods, err := d.getPods(n.GetName())
 	if err != nil {
 		return errors.Wrapf(err, "cannot get pods for node %s", n.GetName())
 	}
+	d.l.Info("Drain 2")
 
 	abort := make(chan struct{})
 	errs := make(chan error, 1)
 	for _, pod := range pods {
 		go d.evict(pod, abort, errs)
 	}
+	d.l.Info("Drain 3")
+
 	// This will _eventually_ abort evictions. Evictions may spend up to
 	// d.deleteTimeout() in d.awaitDeletion(), or 5 seconds in backoff before
 	// noticing they've been aborted.
 	defer close(abort)
+	d.l.Info("Drain 4")
 
 	deadline := time.After(d.deleteTimeout())
 	for range pods {
@@ -320,6 +325,8 @@ func (d *APICordonDrainer) Drain(n *core.Node) error {
 			return errors.Wrap(errTimeout{}, "timed out waiting for evictions to complete")
 		}
 	}
+	d.l.Info("Drain 5")
+
 	return nil
 }
 

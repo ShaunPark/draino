@@ -133,9 +133,10 @@ func (d *DrainSchedules) newSchedule(node *v1.Node, when time.Time) *schedule {
 		tags, _ := tag.New(context.Background(), tag.Upsert(TagNodeName, node.GetName())) // nolint:gosec
 		d.eventRecorder.Event(nr, core.EventTypeWarning, eventReasonDrainStarting, "Draining node")
 		if err := d.drainer.Drain(node); err != nil {
+			log.Info("Failed to drain", zap.Error(err))
+
 			sched.finish = time.Now()
 			sched.setFailed()
-			log.Info("Failed to drain", zap.Error(err))
 			tags, _ = tag.New(tags, tag.Upsert(TagResult, tagResultFailed)) // nolint:gosec
 			stats.Record(tags, MeasureNodesDrained.M(1))
 			d.eventRecorder.Eventf(nr, core.EventTypeWarning, eventReasonDrainFailed, "Draining failed: %v", err)
@@ -150,8 +151,9 @@ func (d *DrainSchedules) newSchedule(node *v1.Node, when time.Time) *schedule {
 			}
 			return
 		}
-		sched.finish = time.Now()
+
 		log.Info("Drained")
+		sched.finish = time.Now()
 		tags, _ = tag.New(tags, tag.Upsert(TagResult, tagResultSucceeded)) // nolint:gosec
 		stats.Record(tags, MeasureNodesDrained.M(1))
 		d.eventRecorder.Event(nr, core.EventTypeWarning, eventReasonDrainSucceeded, "Drained node")
