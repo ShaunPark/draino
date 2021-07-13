@@ -197,13 +197,17 @@ func (d *APICordonDrainer) Cordon(n *core.Node, mutators ...nodeMutatorFn) error
 	for _, m := range mutators {
 		m(fresh)
 	}
-	if _, err := d.c.CoreV1().Nodes().Update(fresh); err != nil {
-		if err != nil && apierrors.IsConflict(err) {
-			return errors.Wrapf(err, "Cannot cordon node %s", fresh.GetName())
+	for {
+		if _, err := d.c.CoreV1().Nodes().Update(fresh); err != nil {
+			if apierrors.IsConflict(err) {
+				time.Sleep(5)
+			} else {
+				return errors.Wrapf(err, "cannot cordon node %s", fresh.GetName())
+			}
+		} else {
+			return nil
 		}
-		return errors.Wrapf(err, "cannot cordon node %s", fresh.GetName())
 	}
-	return nil
 }
 
 // Uncordon the supplied node. Marks it schedulable for new pods.
