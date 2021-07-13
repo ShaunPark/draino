@@ -316,7 +316,7 @@ func (d *APICordonDrainer) Drain(n *core.Node) error {
 
 	deadline := time.After(d.deleteTimeout())
 
-	d.l.Info("Drain 55555")
+	d.l.Info("Drain 55555222")
 
 	for range pods {
 		select {
@@ -325,6 +325,7 @@ func (d *APICordonDrainer) Drain(n *core.Node) error {
 				d.l.Info("Drain 6-1")
 				return errors.Wrap(err, "cannot evict all pods")
 			}
+			d.l.Info("Drain 6-1111")
 		case <-deadline:
 			d.l.Info("Drain 6-2")
 			return errors.Wrap(errTimeout{}, "timed out waiting for evictions to complete")
@@ -356,10 +357,14 @@ func (d *APICordonDrainer) getPods(node string) ([]core.Pod, error) {
 }
 
 func (d *APICordonDrainer) evict(p core.Pod, abort <-chan struct{}, e chan<- error) {
+	d.l.Info("Evict ", zap.String("Pod", p.Name))
 	gracePeriod := int64(d.maxGracePeriod.Seconds())
 	if p.Spec.TerminationGracePeriodSeconds != nil && *p.Spec.TerminationGracePeriodSeconds < gracePeriod {
 		gracePeriod = *p.Spec.TerminationGracePeriodSeconds
 	}
+
+	d.l.Info("Evict 2", zap.String("Pod", p.Name))
+
 	for {
 		select {
 		case <-abort:
@@ -370,6 +375,12 @@ func (d *APICordonDrainer) evict(p core.Pod, abort <-chan struct{}, e chan<- err
 				ObjectMeta:    meta.ObjectMeta{Namespace: p.GetNamespace(), Name: p.GetName()},
 				DeleteOptions: &meta.DeleteOptions{GracePeriodSeconds: &gracePeriod},
 			})
+			if err != nil {
+				d.l.Error("Evict Error ", zap.Error(err))
+			} else {
+				d.l.Info("Evict err is nil", zap.String("Pod", p.Name))
+			}
+
 			switch {
 			// The eviction API returns 429 Too Many Requests if a pod
 			// cannot currently be evicted, for example due to a pod
@@ -378,12 +389,18 @@ func (d *APICordonDrainer) evict(p core.Pod, abort <-chan struct{}, e chan<- err
 				time.Sleep(5 * time.Second)
 			case apierrors.IsNotFound(err):
 				e <- nil
+				d.l.Info("Evict 3", zap.String("Pod", p.Name))
+
 				return
 			case err != nil:
 				e <- errors.Wrapf(err, "cannot evict pod %s/%s", p.GetNamespace(), p.GetName())
+				d.l.Info("Evict 4", zap.String("Pod", p.Name))
+
 				return
 			default:
 				e <- errors.Wrapf(d.awaitDeletion(p, d.deleteTimeout()), "cannot confirm pod %s/%s was deleted", p.GetNamespace(), p.GetName())
+				d.l.Info("Evict 5", zap.String("Pod", p.Name))
+
 				return
 			}
 		}
