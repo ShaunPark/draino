@@ -312,18 +312,17 @@ func (d *APICordonDrainer) Drain(n *core.Node) error {
 	// d.deleteTimeout() in d.awaitDeletion(), or 5 seconds in backoff before
 	// noticing they've been aborted.
 	defer close(abort)
-	d.l.Info("Drain 4")
+	d.l.Info("Drain 4", zap.Duration("timeout", d.deleteTimeout()))
 
 	deadline := time.After(d.deleteTimeout())
 
-	d.l.Info("Drain 5")
+	d.l.Info("Drain 55555")
 
 	for range pods {
 		select {
 		case err := <-errs:
 			if err != nil {
 				d.l.Info("Drain 6-1")
-
 				return errors.Wrap(err, "cannot evict all pods")
 			}
 		case <-deadline:
