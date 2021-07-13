@@ -228,6 +228,7 @@ func (d *APICordonDrainer) MarkDrain(n *core.Node, when, finish time.Time, faile
 	// Refresh the node object
 	freshNode, err := d.c.CoreV1().Nodes().Get(nodeName, meta.GetOptions{})
 	if err != nil {
+		d.l.Error("#####ERROR ERROR ", zap.Error(err))
 		if !apierrors.IsNotFound(err) {
 			return err
 		}
