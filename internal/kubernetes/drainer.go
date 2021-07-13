@@ -198,6 +198,9 @@ func (d *APICordonDrainer) Cordon(n *core.Node, mutators ...nodeMutatorFn) error
 		m(fresh)
 	}
 	if _, err := d.c.CoreV1().Nodes().Update(fresh); err != nil {
+		if err != nil && apierrors.IsConflict(err) {
+			return errors.Wrapf(err, "Cannot cordon node %s", fresh.GetName())
+		}
 		return errors.Wrapf(err, "cannot cordon node %s", fresh.GetName())
 	}
 	return nil
