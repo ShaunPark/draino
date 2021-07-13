@@ -388,19 +388,16 @@ func (d *APICordonDrainer) evict(p core.Pod, abort <-chan struct{}, e chan<- err
 			case apierrors.IsTooManyRequests(err):
 				time.Sleep(5 * time.Second)
 			case apierrors.IsNotFound(err):
-				e <- nil
 				d.l.Info("Evict 3", zap.String("Pod", p.Name))
-
+				e <- nil
 				return
 			case err != nil:
-				e <- errors.Wrapf(err, "cannot evict pod %s/%s", p.GetNamespace(), p.GetName())
 				d.l.Info("Evict 4", zap.String("Pod", p.Name))
-
+				e <- errors.Wrapf(err, "cannot evict pod %s/%s", p.GetNamespace(), p.GetName())
 				return
 			default:
-				e <- errors.Wrapf(d.awaitDeletion(p, d.deleteTimeout()), "cannot confirm pod %s/%s was deleted", p.GetNamespace(), p.GetName())
 				d.l.Info("Evict 5", zap.String("Pod", p.Name))
-
+				e <- errors.Wrapf(d.awaitDeletion(p, d.deleteTimeout()), "cannot confirm pod %s/%s was deleted", p.GetNamespace(), p.GetName())
 				return
 			}
 		}
