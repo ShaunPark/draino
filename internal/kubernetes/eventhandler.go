@@ -146,9 +146,10 @@ func (h *DrainingResourceEventHandler) OnDelete(obj interface{}) {
 		if !ok {
 			return
 		}
+		h.logger.Info("Delete Schedule")
 		h.drainScheduler.DeleteSchedule(d.Key)
 	}
-
+	h.logger.Info("Delete Schedule")
 	h.drainScheduler.DeleteSchedule(n.GetName())
 }
 
@@ -156,6 +157,7 @@ func (h *DrainingResourceEventHandler) HandleNode(n *core.Node) {
 	badConditions := h.offendingConditions(n)
 	if len(badConditions) == 0 {
 		if shouldUncordon(n) {
+			h.logger.Info("Delete Schedule")
 			h.drainScheduler.DeleteSchedule(n.GetName())
 			h.uncordon(n)
 		}
@@ -178,6 +180,7 @@ func (h *DrainingResourceEventHandler) HandleNode(n *core.Node) {
 
 	// Is there a request to retry a failed drain activity. If yes reschedule drain
 	if failedDrain && HasDrainRetryAnnotation(n) {
+		h.logger.Info("Delete Schedule")
 		h.drainScheduler.DeleteSchedule(n.GetName())
 		h.scheduleDrain(n)
 		return

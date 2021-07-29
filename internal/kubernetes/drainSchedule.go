@@ -103,6 +103,7 @@ func (d *DrainSchedules) Schedule(node *v1.Node) (time.Time, error) {
 		SetConditionTimeout,
 	); err != nil {
 		// if we cannot mark the node, let's remove the schedule
+		d.logger.Info("Delete Schedule")
 		d.DeleteSchedule(node.GetName())
 		return time.Time{}, err
 	}
