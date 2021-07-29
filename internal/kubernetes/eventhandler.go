@@ -172,6 +172,8 @@ func (h *DrainingResourceEventHandler) HandleNode(n *core.Node) {
 	if !hasSChedule {
 		h.scheduleDrain(n)
 		return
+	} else {
+		h.logger.Info("Already Scheduled.")
 	}
 
 	// Is there a request to retry a failed drain activity. If yes reschedule drain
