@@ -156,7 +156,7 @@ func (h *DrainingResourceEventHandler) OnDelete(obj interface{}) {
 func (h *DrainingResourceEventHandler) HandleNode(n *core.Node) {
 	badConditions := h.offendingConditions(n)
 	if len(badConditions) == 0 {
-		if shouldUncordon(n) {
+		if shouldUncordon(n, h.logger) {
 			h.logger.Info("Delete Schedule")
 			h.drainScheduler.DeleteSchedule(n.GetName())
 			h.uncordon(n)
@@ -211,12 +211,14 @@ func (h *DrainingResourceEventHandler) offendingConditions(n *core.Node) []Suppl
 	return conditions
 }
 
-func shouldUncordon(n *core.Node) bool {
+func shouldUncordon(n *core.Node, l *zap.Logger) bool {
 	if !n.Spec.Unschedulable {
+		l.Info("n.spec.unschedulable is false")
 		return false
 	}
 	previousConditions := parseConditionsFromAnnotation(n)
 	if len(previousConditions) == 0 {
+		l.Info("previousConditions is 0")
 		return false
 	}
 	for _, previousCondition := range previousConditions {
