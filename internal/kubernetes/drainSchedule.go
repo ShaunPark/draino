@@ -56,7 +56,7 @@ func (d *DrainSchedules) HasSchedule(name string) (has, failed bool) {
 	if !ok {
 		return false, false
 	}
-	d.logger.Info("HasSchedule", zap.Time("when", sched.when), zap.Time("finish", sched.finish))
+	d.logger.Info("HasSchedule", zap.Time("when", sched.when), zap.Time("finish", sched.finish), zap.Bool("isFailed", sched.isFailed()))
 	return true, sched.isFailed()
 }
 

@@ -160,8 +160,12 @@ func (h *DrainingResourceEventHandler) HandleNode(n *core.Node) {
 			h.logger.Info("Delete Schedule")
 			h.drainScheduler.DeleteSchedule(n.GetName())
 			h.uncordon(n)
+		} else {
+			h.logger.Info("no need uncordon")
 		}
 		return
+	} else {
+		h.logger.Info("badConditions exist")
 	}
 
 	// First cordon the node if it is not yet cordonned
@@ -184,6 +188,12 @@ func (h *DrainingResourceEventHandler) HandleNode(n *core.Node) {
 		h.drainScheduler.DeleteSchedule(n.GetName())
 		h.scheduleDrain(n)
 		return
+	} else {
+		if failedDrain {
+			h.logger.Info("Failed Drain")
+		} else {
+			h.logger.Info("HasDrainRetryAnnotation")
+		}
 	}
 }
 
