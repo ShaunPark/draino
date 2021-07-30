@@ -154,6 +154,7 @@ func (h *DrainingResourceEventHandler) OnDelete(obj interface{}) {
 }
 
 func (h *DrainingResourceEventHandler) HandleNode(n *core.Node) {
+	h.logger.Info("HandleLogger started")
 	badConditions := h.offendingConditions(n)
 	if len(badConditions) == 0 {
 		if shouldUncordon(n, h.logger) {
@@ -189,7 +190,7 @@ func (h *DrainingResourceEventHandler) HandleNode(n *core.Node) {
 		h.scheduleDrain(n)
 		return
 	} else {
-		if failedDrain {
+		if !failedDrain {
 			h.logger.Info("Failed Drain")
 		} else {
 			h.logger.Info("HasDrainRetryAnnotation")
