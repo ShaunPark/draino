@@ -180,7 +180,14 @@ func (h *DrainingResourceEventHandler) HandleNode(n *core.Node) {
 		h.scheduleDrain(n)
 		return
 	} else {
-		h.logger.Info("Already Scheduled.")
+		var isValid bool = false
+		for _, c := range badConditions {
+			transitionTime, exist := getTransitionTime(n, c.Type)
+			if exist {
+				isValid = h.drainScheduler.IsValidSchedule(n.GetName(), transitionTime)
+			}
+		}
+		h.logger.Info("Already Scheduled.", zap.Bool("isValie", isValid))
 	}
 
 	// Is there a request to retry a failed drain activity. If yes reschedule drain
@@ -198,6 +205,15 @@ func (h *DrainingResourceEventHandler) HandleNode(n *core.Node) {
 	}
 }
 
+func getTransitionTime(n *core.Node, conditionType core.NodeConditionType) (time.Time, bool) {
+	for _, nodeCondition := range n.Status.Conditions {
+		if nodeCondition.Type == conditionType {
+			return nodeCondition.LastTransitionTime.Time, true
+		}
+	}
+	return time.Time{}, false
+}
+
 func (h *DrainingResourceEventHandler) offendingConditions(n *core.Node) []SuppliedCondition {
 	var conditions []SuppliedCondition
 	for _, suppliedCondition := range h.conditions {
@@ -213,11 +229,14 @@ func (h *DrainingResourceEventHandler) offendingConditions(n *core.Node) []Suppl
 }
 
 func shouldUncordon(n *core.Node, l *zap.Logger) bool {
+	//uncordon 상태이면 cordon할 필요 없음
 	if !n.Spec.Unschedulable {
 		l.Info("n.spec.unschedulable is false")
 		return false
 	}
+	// annotation에 저장된 이전 컨디션 값 조회
 	previousConditions := parseConditionsFromAnnotation(n)
+	// 이전 컨디션이 없으면 cordon할 필요 없음
 	if len(previousConditions) == 0 {
 		l.Info("previousConditions is 0")
 		return false
@@ -227,6 +246,7 @@ func shouldUncordon(n *core.Node, l *zap.Logger) bool {
 			if previousCondition.Type == nodeCondition.Type &&
 				previousCondition.Status != nodeCondition.Status &&
 				time.Since(nodeCondition.LastTransitionTime.Time) >= previousCondition.MinimumDuration {
+				l.Info("should uncordon", zap.String("previousCondition.Type", string(previousCondition.Type)))
 				return true
 			}
 		}
@@ -235,12 +255,16 @@ func shouldUncordon(n *core.Node, l *zap.Logger) bool {
 }
 
 func parseConditionsFromAnnotation(n *core.Node) []SuppliedCondition {
+	// 어노테이션이 없으면
 	if n.Annotations == nil {
 		return nil
 	}
+	// 어노테이션 중에 drainConditionsAnnotationKey가 없으면
+	// "draino.planet.com/conditions"
 	if n.Annotations[drainoConditionsAnnotationKey] == "" {
 		return nil
 	}
+	// draino.planet.com/conditions 컨디션 파싱
 	rawConditions := strings.Split(n.Annotations[drainoConditionsAnnotationKey], ";")
 	return ParseConditions(rawConditions)
 }

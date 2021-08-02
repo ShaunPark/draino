@@ -67,6 +67,7 @@ func NewNodeLabelFilter(expressionStr *string, log *zap.Logger) (func(o interfac
 
 // ParseConditions can parse the string array of conditions to a list of
 // SuppliedContion to support particular status value and duration.
+// condition, status, duration
 func ParseConditions(conditions []string) []SuppliedCondition {
 	parsed := make([]SuppliedCondition, len(conditions))
 	for i, c := range conditions {
