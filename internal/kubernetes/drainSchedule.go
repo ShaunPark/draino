@@ -57,7 +57,7 @@ func (d *DrainSchedules) IsValidSchedule(name string, transitionTime time.Time) 
 	if !ok {
 		return true
 	}
-	return sched.when.Before(transitionTime)
+	return sched.when.Before(transitionTime) && !sched.isFailed() && !sched.finish.IsZero()
 }
 
 func (d *DrainSchedules) HasSchedule(name string) (has, failed bool) {

@@ -187,6 +187,12 @@ func (h *DrainingResourceEventHandler) HandleNode(n *core.Node) {
 				isValid = h.drainScheduler.IsValidSchedule(n.GetName(), transitionTime)
 			}
 		}
+		if isValid {
+			h.logger.Info("Already Scheduled but old and finished schedule new drain.", zap.Bool("isValie", isValid))
+			h.drainScheduler.DeleteSchedule(n.GetName())
+			h.scheduleDrain(n)
+			return
+		}
 		h.logger.Info("Already Scheduled.", zap.Bool("isValie", isValid))
 	}
 
