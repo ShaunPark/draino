@@ -154,7 +154,7 @@ func (h *DrainingResourceEventHandler) OnDelete(obj interface{}) {
 func (h *DrainingResourceEventHandler) HandleNode(n *core.Node) {
 	badConditions := h.offendingConditions(n)
 	if len(badConditions) == 0 {
-		if shouldUncordon(n, h.logger) {
+		if shouldUncordon(n) {
 			h.drainScheduler.DeleteSchedule(n.GetName())
 			h.uncordon(n)
 		}
@@ -218,7 +218,7 @@ func (h *DrainingResourceEventHandler) offendingConditions(n *core.Node) []Suppl
 	return conditions
 }
 
-func shouldUncordon(n *core.Node, l *zap.Logger) bool {
+func shouldUncordon(n *core.Node) bool {
 	//uncordon 상태이면 cordon할 필요 없음
 	if !n.Spec.Unschedulable {
 		return false
