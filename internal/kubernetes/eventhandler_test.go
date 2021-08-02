@@ -76,9 +76,9 @@ func (d *mockCordonDrainer) HasSchedule(name string) (has, failed bool) {
 	return false, false
 }
 
-func (d *mockCordonDrainer) IsValidSchedule(name string, transitionTime time.Time) bool {
+func (d *mockCordonDrainer) IsScheduledByOldEvent(name string, transitionTime time.Time) bool {
 	d.calls = append(d.calls, mockCall{
-		name: "IsValidSchedule",
+		name: "IsScheduledByOldEvent",
 		node: name,
 	})
 	return true

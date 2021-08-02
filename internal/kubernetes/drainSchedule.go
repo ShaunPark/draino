@@ -25,7 +25,7 @@ type DrainScheduler interface {
 	HasSchedule(name string) (has, failed bool)
 	Schedule(node *v1.Node) (time.Time, error)
 	DeleteSchedule(name string)
-	IsValidSchedule(name string, transitionTime time.Time) bool
+	IsScheduledByOldEvent(name string, transitionTime time.Time) bool
 }
 
 type DrainSchedules struct {
@@ -50,7 +50,7 @@ func NewDrainSchedules(drainer Drainer, eventRecorder record.EventRecorder, peri
 	}
 }
 
-func (d *DrainSchedules) IsValidSchedule(name string, transitionTime time.Time) bool {
+func (d *DrainSchedules) IsScheduledByOldEvent(name string, transitionTime time.Time) bool {
 	d.Lock()
 	defer d.Unlock()
 	sched, ok := d.schedules[name]

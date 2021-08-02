@@ -146,27 +146,19 @@ func (h *DrainingResourceEventHandler) OnDelete(obj interface{}) {
 		if !ok {
 			return
 		}
-		h.logger.Info("Delete Schedule")
 		h.drainScheduler.DeleteSchedule(d.Key)
 	}
-	h.logger.Info("Delete Schedule")
 	h.drainScheduler.DeleteSchedule(n.GetName())
 }
 
 func (h *DrainingResourceEventHandler) HandleNode(n *core.Node) {
-	h.logger.Info("HandleLogger started")
 	badConditions := h.offendingConditions(n)
 	if len(badConditions) == 0 {
 		if shouldUncordon(n, h.logger) {
-			h.logger.Info("Delete Schedule")
 			h.drainScheduler.DeleteSchedule(n.GetName())
 			h.uncordon(n)
-		} else {
-			h.logger.Info("no need uncordon")
 		}
 		return
-	} else {
-		h.logger.Info("badConditions exist")
 	}
 
 	// First cordon the node if it is not yet cordonned
@@ -180,34 +172,26 @@ func (h *DrainingResourceEventHandler) HandleNode(n *core.Node) {
 		h.scheduleDrain(n)
 		return
 	} else {
-		var isValid bool = false
+		var isScheduledByOldEvent bool = false
 		for _, c := range badConditions {
 			transitionTime, exist := getTransitionTime(n, c.Type)
 			if exist {
-				isValid = h.drainScheduler.IsValidSchedule(n.GetName(), transitionTime)
+				isScheduledByOldEvent = h.drainScheduler.IsScheduledByOldEvent(n.GetName(), transitionTime)
 			}
 		}
-		if isValid {
-			h.logger.Info("Already Scheduled but old and finished schedule new drain.", zap.Bool("isValie", isValid))
+		if isScheduledByOldEvent {
+			h.logger.Info("Already Scheduled but old and finished schedule new drain.", zap.Bool("isValie", isScheduledByOldEvent))
 			h.drainScheduler.DeleteSchedule(n.GetName())
 			h.scheduleDrain(n)
 			return
 		}
-		h.logger.Info("Already Scheduled.", zap.Bool("isValie", isValid))
 	}
 
 	// Is there a request to retry a failed drain activity. If yes reschedule drain
 	if failedDrain && HasDrainRetryAnnotation(n) {
-		h.logger.Info("Delete Schedule")
 		h.drainScheduler.DeleteSchedule(n.GetName())
 		h.scheduleDrain(n)
 		return
-	} else {
-		if !failedDrain {
-			h.logger.Info("Drain Success")
-		} else {
-			h.logger.Info("HasDrainRetryAnnotation does not exist")
-		}
 	}
 }
 
@@ -237,14 +221,12 @@ func (h *DrainingResourceEventHandler) offendingConditions(n *core.Node) []Suppl
 func shouldUncordon(n *core.Node, l *zap.Logger) bool {
 	//uncordon 상태이면 cordon할 필요 없음
 	if !n.Spec.Unschedulable {
-		l.Info("n.spec.unschedulable is false")
 		return false
 	}
 	// annotation에 저장된 이전 컨디션 값 조회
 	previousConditions := parseConditionsFromAnnotation(n)
 	// 이전 컨디션이 없으면 cordon할 필요 없음
 	if len(previousConditions) == 0 {
-		l.Info("previousConditions is 0")
 		return false
 	}
 	for _, previousCondition := range previousConditions {
@@ -252,7 +234,6 @@ func shouldUncordon(n *core.Node, l *zap.Logger) bool {
 			if previousCondition.Type == nodeCondition.Type &&
 				previousCondition.Status != nodeCondition.Status &&
 				time.Since(nodeCondition.LastTransitionTime.Time) >= previousCondition.MinimumDuration {
-				l.Info("should uncordon", zap.String("previousCondition.Type", string(previousCondition.Type)))
 				return true
 			}
 		}
