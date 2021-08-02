@@ -204,9 +204,9 @@ func (h *DrainingResourceEventHandler) HandleNode(n *core.Node) {
 		return
 	} else {
 		if !failedDrain {
-			h.logger.Info("Failed Drain")
+			h.logger.Info("Drain Success")
 		} else {
-			h.logger.Info("HasDrainRetryAnnotation")
+			h.logger.Info("HasDrainRetryAnnotation does not exist")
 		}
 	}
 }
