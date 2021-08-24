@@ -60,6 +60,12 @@ func NewNodeLabelFilter(expressionStr *string, log *zap.Logger) (func(o interfac
 		}
 
 		result, err := expr.Run(expression, parameters)
+		if str, ok := result.(string); ok {
+			println(str)
+		}
+		if str, ok := result.(bool); ok {
+			println(str)
+		}
 		if err != nil {
 			log.Error(fmt.Sprintf("Could not parse expression: %v", err))
 		}
