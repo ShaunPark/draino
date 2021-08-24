@@ -38,6 +38,8 @@ func NewNodeLabelFilter(expressionStr *string, log *zap.Logger) (func(o interfac
 		return nil, err
 	}
 
+	println(*expressionStr)
+
 	return func(o interface{}) bool {
 		//This feels wrong but this is how the previous behavior worked so I'm only keeping it to maintain compatibility.
 		if *expressionStr == "" {
